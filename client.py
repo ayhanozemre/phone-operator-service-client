@@ -12,9 +12,9 @@ from fake_useragent import UserAgent
 ua = UserAgent(cache=True)
 logger = logging.getLogger(__name__)
 
-OPERATOR_DOMAIN = ''
+OPERATOR_DOMAIN = os.environ.get('OPERATOR_DOMAIN')
 if not OPERATOR_DOMAIN:
-    logger.error('[**] Update Operator Domain!')
+    logger.error('[**] OPERATOR_DOMAIN not defined')
     sys.exit(1)
 
 BASE_URL = 'https://{domain}'.format(domain=OPERATOR_DOMAIN)
@@ -82,17 +82,14 @@ def find_number(number, items):
 
 
 def find_available_number(number, loop_count=1):
-
-    @asyncio.coroutine
-    def async_find_available_numbers(number):
+    async def find_available_numbers(number):
         items = available_random_numbers()
         return find_number(number, items)
 
     number = str(number)
     loop = asyncio.get_event_loop()
     tasks = asyncio.gather(*[
-        async_find_available_numbers(number)
+        find_available_numbers(number)
         for i in range(0, loop_count)])
     loop.run_until_complete(tasks)
-    loop.close()
     return list(chain(*tasks.result()))
